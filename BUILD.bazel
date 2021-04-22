@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
+load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/tommyknown/repro",
+    visibility = ["//visibility:private"],
+)
+
+go_image(
+    name = "mybin",
+    embed = [":go_default_library"],
+    goos = "linux",
+    goarch = "amd64",
+    visibility = ["//visibility:public"],
+)
+
+py_runtime(
+    name = "python3",
+    interpreter_path = select({
+        ":py3_9": "/usr/local/bin/python3.9",
+        "//conditions:default": "/usr/local/bin/python3.8",
+    }),
+    python_version = "PY3",
+)
+
+config_setting(
+    name = "py3_9",
+    values = {
+        "define": "py3_9=yes",
+    }
+)
+
+py_runtime_pair(
+    name = "python_pair",
+    py3_runtime = ":python3",
+)
+
+toolchain(
+    name = "python",
+    toolchain = ":python_pair",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+)
